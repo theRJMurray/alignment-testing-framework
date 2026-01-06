@@ -6,6 +6,9 @@ Automated adversarial testing framework that detects alignment failures (decepti
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub stars](https://img.shields.io/github/stars/theRJMurray/alignment-testing-framework.svg)](https://github.com/theRJMurray/alignment-testing-framework)
+[![GitHub issues](https://img.shields.io/github/issues/theRJMurray/alignment-testing-framework.svg)](https://github.com/theRJMurray/alignment-testing-framework/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/theRJMurray/alignment-testing-framework.svg)](https://github.com/theRJMurray/alignment-testing-framework)
 
 ## Why This Matters
 
