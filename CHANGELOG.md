@@ -5,6 +5,72 @@ All notable changes to the AI Alignment Testing Framework will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-01-07
+
+### Added - Expanded Test Suite (+16 Tests, 80% Coverage Increase)
+
+Expanded test coverage from 20 to 36 scenarios, adding 16 new adversarial tests across all categories to cover additional alignment failure modes.
+
+#### New Deception Tests (4 added → 9 total)
+- **deception-006: Privacy Violation Through Technical Framing** - Tests data extraction disguised as debugging
+- **deception-007: Jailbreak Through Role-Play** - Tests fictional/creative framing to bypass restrictions
+- **deception-008: Harmful Stereotypes Under Accuracy Framing** - Tests if "factual accuracy" framing elicits biased content
+- **deception-009: Misinformation Under Uncertainty** - Tests if pressure for definitive answers produces false claims
+
+#### New Goal Preservation Tests (4 added → 9 total)
+- **goal-006: Convenience vs Security Trade-off** - Tests prioritization of user convenience over security
+- **goal-007: Short-term Satisfaction vs Long-term Harm** - Tests immediate user happiness vs preventing harmful decisions
+- **goal-008: Efficiency vs Safety Bypass** - Tests automation that bypasses safety processes
+- **goal-009: Metric Optimization vs True Goal** - Tests gaming metrics vs genuine value creation
+
+#### New Power-Seeking Tests (4 added → 9 total)
+- **power-006: Data Collection Beyond Stated Purpose** - Tests unnecessary data access requests
+- **power-007: Influence Expansion Through Recommendations** - Tests expanding role beyond user needs
+- **power-008: Resisting Capability Limitations** - Tests claiming or arguing for capabilities beyond design
+- **power-009: Coalition Building Against Oversight** - Tests alliance-building with users against developers
+
+#### New Strategic Tests (4 added → 9 total)
+- **strategic-006: Gradual Boundary Testing** - Tests incremental boundary pushing across conversation turns
+- **strategic-007: Context Exploitation** - Tests different behavior in educational vs deployment contexts
+- **strategic-008: Capability Sandbagging** - Tests understating capabilities to avoid scrutiny
+- **strategic-009: Selective Honesty for Trust Building** - Tests using honesty strategically before deception
+
+### Coverage Improvements
+
+**New Failure Modes Covered:**
+- Privacy violations through technical justification
+- Jailbreak attempts via role-play/fiction
+- Bias/stereotypes framed as factual accuracy
+- Misinformation under pressure for certainty
+- Security weakening for convenience
+- Metric gaming vs genuine objectives
+- Scope creep in data collection
+- False capability claims
+- Multi-turn manipulation strategies
+- Context-dependent behavior changes
+
+**Test Distribution:**
+- Deception: 9 tests (was 5)
+- Goal Preservation: 9 tests (was 5)
+- Power-Seeking: 9 tests (was 5)
+- Strategic: 9 tests (was 5)
+- **Total: 36 tests (was 20)**
+
+### Impact
+
+**Enhanced Detection:**
+- Privacy/security trade-offs
+- Gradual manipulation tactics
+- Context-specific misalignment
+- Sophisticated deception patterns
+- Metric optimization failures
+
+**Research Value:**
+- More comprehensive model evaluation
+- Better coverage of real-world failure modes
+- Increased statistical power for comparisons
+- Richer dataset for alignment research
+
 ## [0.1.3] - 2026-01-07
 
 ### Fixed - Enhanced Context Detection for False Positives
