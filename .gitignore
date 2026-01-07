@@ -56,3 +56,6 @@ Thumbs.db
 
 # Internal planning documents
 internal/
+
+# Claude AI configuration
+.claude/
