@@ -1,8 +1,8 @@
-# AI Alignment Testing Framework
+# AI Alignment Testing Framework v0.1.5
 
 > **Independent, open-source toolkit for testing AI systems for misalignment**
 
-Automated adversarial testing framework that detects alignment failures (deception, goal drift, power-seeking) in language models before deployment.
+Automated adversarial testing framework that detects alignment failures (deception, goal drift, power-seeking) in language models before deployment. Includes **mechanistic interpretability** for analyzing model internals during testing.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -25,6 +25,8 @@ This framework provides **rigorous, reproducible testing** for alignment failure
 ✅ **20+ Adversarial Scenarios** - Designed to elicit misaligned behavior
 ✅ **Quantitative Scores** - 0-100 alignment ratings with confidence intervals
 ✅ **Multiple Failure Modes** - Deception, power-seeking, goal drift, strategic planning
+✅ **Mechanistic Interpretability** - Analyze model internals during testing (local models)
+✅ **Behavioral Fingerprinting** - Create unique signatures of alignment patterns
 ✅ **Beautiful Reports** - Console, Markdown, and JSON outputs
 ✅ **Open Methodology** - Fully transparent and reproducible
 
@@ -82,6 +84,23 @@ alignment-tester test --model claude-sonnet-4-5-20250929 --category deception
 # Compare multiple models
 alignment-tester compare claude-sonnet-4-5-20250929 gpt-4o
 ```
+
+### Mechanistic Analysis (Advanced)
+
+For deep analysis of local/open-source models:
+
+```bash
+# Test with mechanistic interpretability
+alignment-tester test --model gpt2 --mechanistic
+
+# Save behavioral fingerprint for research
+alignment-tester test --model gpt2 --mechanistic --output-fingerprint fingerprint.json
+
+# Check mechanistic capabilities for a model
+alignment-tester mechanistic-info --model gpt2
+```
+
+**Note:** Mechanistic analysis requires local model access and works with open-source models like GPT-2, LLaMA, BERT, etc. API models (Claude, GPT-4) use traditional alignment testing only.
 
 ### Example Output
 
@@ -173,6 +192,9 @@ Options:
   --temperature FLOAT   Model temperature (default: 0.7)
   --max-tokens INT      Max tokens per response (default: 1000)
   --format TEXT         Output format: console, markdown, json, all
+  --mechanistic         Enable mechanistic interpretability analysis
+  --fingerprint-only    Only show fingerprint analysis (skip traditional tests)
+  --output-fingerprint PATH  Save fingerprint to JSON file
   --verbose             Show detailed logs
 ```
 
@@ -192,6 +214,14 @@ Options:
 alignment-tester list-models
 ```
 
+### Mechanistic Info
+
+```bash
+alignment-tester mechanistic-info --model MODEL
+
+Get information about mechanistic analysis capabilities for a model.
+```
+
 ## Project Structure
 
 ```
@@ -199,6 +229,11 @@ alignment-testing-framework/
 ├── src/alignment_tester/
 │   ├── core/              # Core testing logic
 │   ├── models/            # Model adapters (Anthropic, OpenAI)
+│   ├── mechanistic/       # Mechanistic interpretability engine
+│   │   ├── interpreter.py     # Core analysis engine
+│   │   ├── fingerprinter.py   # Behavioral fingerprinting
+│   │   ├── model_adapter.py   # Architecture detection
+│   │   └── tests/             # Unit tests
 │   ├── tests/             # Test scenarios and loader
 │   ├── evaluation/        # Scoring and reporting
 │   ├── data/
@@ -270,10 +305,9 @@ mypy src/alignment_tester/
 
 ## Roadmap
 
-**v0.1 (Current)** - MVP with 20 test scenarios, 2 model providers
+**v0.1.5 (Current)** - MVP with mechanistic interpretability, 20+ test scenarios, 2 model providers
 **v0.2** - Semantic similarity scoring, HuggingFace support
-**v0.3** - Mechanistic interpretability integration
-**v0.4** - Web dashboard and API server
+**v0.3** - Web dashboard and API server
 **v1.0** - Production-ready with 100+ scenarios
 
 ## Contributing
