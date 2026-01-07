@@ -10,6 +10,7 @@ This script demonstrates:
 
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -63,35 +64,80 @@ def demo_single_model():
     print("="*60)
     report_gen.generate_console_report(overall_score, model_info.model_name)
 
-    # Save reports
+    # Save reports with timestamp to avoid overwriting
     output_dir = Path("./demo_results")
     output_dir.mkdir(exist_ok=True)
 
+    # Generate timestamp for unique filenames
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_short_name = model_info.model_name.replace("claude-", "").replace("gpt-", "").replace("-", "")
+
+    # Create timestamped filenames
+    markdown_file = output_dir / f"report_{model_short_name}_{timestamp}.md"
+    json_file = output_dir / f"results_{model_short_name}_{timestamp}.json"
+    transparency_file = output_dir / f"transparency_report_{model_short_name}_{timestamp}.md"
+
     print("\nSaving reports...")
+
+    # Generate and save markdown report
     report_gen.generate_markdown_report(
         overall_score,
         model_info.model_name,
         model_info.provider,
-        output_dir / "report.md"
+        markdown_file
     )
-    print(f"  ✓ Markdown report: {output_dir / 'report.md'}")
+    print(f"  ✓ Markdown report: {markdown_file}")
 
+    # Generate and save JSON report
     report_gen.generate_json_report(
         overall_score,
         model_info.model_name,
         model_info.provider,
-        output_dir / "results.json"
+        json_file
     )
-    print(f"  ✓ JSON results: {output_dir / 'results.json'}")
+    print(f"  ✓ JSON results: {json_file}")
 
     # Generate transparency report with full Q&A
     transparency_path = generate_transparency_report(
         overall_score,
         model_info.model_name,
         model_info.provider,
-        output_dir
+        output_dir,
+        filename=f"transparency_report_{model_short_name}_{timestamp}.md"
     )
     print(f"  ✓ Transparency report (full Q&A): {transparency_path}")
+
+    # Create symlinks to latest results for easy access
+    try:
+        # Remove existing symlinks if they exist
+        latest_md = output_dir / "report_latest.md"
+        latest_json = output_dir / "results_latest.json"
+        latest_transparency = output_dir / "transparency_report_latest.md"
+
+        if latest_md.exists() or latest_md.is_symlink():
+            latest_md.unlink(missing_ok=True)
+        if latest_json.exists() or latest_json.is_symlink():
+            latest_json.unlink(missing_ok=True)
+        if latest_transparency.exists() or latest_transparency.is_symlink():
+            latest_transparency.unlink(missing_ok=True)
+
+        # Create new symlinks (using relative paths for better compatibility)
+        import platform
+        if platform.system() != "Windows":
+            # Unix-like systems
+            os.symlink(markdown_file.name, latest_md)
+            os.symlink(json_file.name, latest_json)
+            os.symlink(transparency_path.name, latest_transparency)
+        else:
+            # Windows - create copies instead of symlinks for compatibility
+            import shutil
+            shutil.copy2(markdown_file, latest_md)
+            shutil.copy2(json_file, latest_json)
+            shutil.copy2(transparency_path, latest_transparency)
+
+        print(f"  ✓ Latest symlinks created (report_latest.md, results_latest.json, transparency_report_latest.md)")
+    except Exception as e:
+        print(f"  ⚠ Could not create latest symlinks: {e}")
 
 
 def demo_category_test():
@@ -266,10 +312,11 @@ def main():
         print("Demo completed successfully!")
         print("="*60)
         print("\nNext steps:")
-        print("  1. Check the generated reports in ./demo_results/")
-        print("  2. Try the CLI: alignment-tester test --model your-model")
-        print("  3. Read docs/METHODOLOGY.md for scoring details")
-        print("  4. Add custom test scenarios in data/test_scenarios/")
+        print("  1. Check the timestamped reports in ./demo_results/ (each run saves separately)")
+        print("  2. Use latest symlinks for easy access: report_latest.md, results_latest.json")
+        print("  3. Try the CLI: alignment-tester test --model your-model")
+        print("  4. Read docs/METHODOLOGY.md for scoring details")
+        print("  5. Add custom test scenarios in data/test_scenarios/")
         print()
 
     except KeyboardInterrupt:

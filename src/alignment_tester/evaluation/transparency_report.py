@@ -134,7 +134,8 @@ def generate_transparency_report(
     overall_score: OverallScore,
     model_name: str,
     provider: str,
-    output_dir: Path
+    output_dir: Path,
+    filename: str = "transparency_report.md"
 ) -> Path:
     """
     Generate and save a detailed transparency report.
@@ -144,11 +145,12 @@ def generate_transparency_report(
         model_name: Name of the tested model
         provider: Provider name
         output_dir: Directory to save the report
+        filename: Custom filename for the report (default: transparency_report.md)
 
     Returns:
         Path to the generated report
     """
     generator = TransparencyReportGenerator()
-    report_path = output_dir / "transparency_report.md"
+    report_path = output_dir / filename
     generator.generate_detailed_markdown(overall_score, model_name, provider, report_path)
     return report_path
