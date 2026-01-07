@@ -298,7 +298,7 @@ If you use this framework in your research, please cite:
   author = {AI Safety Evaluation Platform},
   year = {2026},
   url = {https://github.com/theRJMurray/alignment-testing-framework},
-  version = {0.1.0}
+  version = {0.1.5}
 }
 ```
 

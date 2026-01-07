@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8") if
 
 setup(
     name="alignment-testing-framework",
-    version="0.1.2",
+    version="0.1.5",
     description="Automated adversarial testing framework for AI alignment",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -60,3 +60,4 @@ internal/
 # Claude AI configuration
 .claude/
 .claude/settings.local.json
+.claude/settings.local.json

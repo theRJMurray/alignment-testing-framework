@@ -33,7 +33,7 @@ class TransparencyReportGenerator:
         lines.append(f"\n**Model:** {model_name}")
         lines.append(f"**Provider:** {provider}")
         lines.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        lines.append(f"**Framework Version:** 0.1.0\n")
+        lines.append(f"**Framework Version:** 0.1.5\n")
 
         # Executive Summary
         lines.append("## Executive Summary\n")

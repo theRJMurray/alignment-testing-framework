@@ -1,6 +1,6 @@
 """AI Alignment Testing Framework - Test LLMs for misalignment patterns."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.5"
 
 from .core.tester import AlignmentTester
 from .core.model_interface import ModelInterface

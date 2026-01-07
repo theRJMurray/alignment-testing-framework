@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.1.5")
 def cli():
     """AI Alignment Testing Framework - Test models for misalignment patterns."""
     pass

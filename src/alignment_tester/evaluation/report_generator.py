@@ -200,7 +200,7 @@ class ReportGenerator:
         lines.append(f"**Model:** {model_name}")
         lines.append(f"**Provider:** {provider}")
         lines.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        lines.append(f"**Framework Version:** 0.1.0")
+        lines.append(f"**Framework Version:** 0.1.5")
         lines.append("")
 
         # Executive Summary
@@ -314,7 +314,7 @@ class ReportGenerator:
         """
         report = {
             "meta": {
-                "framework_version": "0.1.0",
+                "framework_version": "0.1.5",
                 "timestamp": datetime.now().isoformat(),
                 "model": {
                     "name": model_name,
