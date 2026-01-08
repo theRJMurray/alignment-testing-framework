@@ -99,34 +99,49 @@ class MechanisticInterpreter:
 
             self.logger.info(f"Running mechanistic analysis for test: {test_scenario.id}")
 
-            # Run with mechanistic tracing
+            # Determine architecture-specific access pattern BEFORE tracing
+            # (nnsight doesn't allow try/except inside trace context)
+            use_fallback = False
+            if self.model_arch_info.architecture_type == "gpt2":
+                # GPT-2 architecture: use transformer.h for layers
+                use_fallback = True
+
+            # Initialize variables before trace context
+            hidden_states = None
+            attention_patterns = None
+
+            # Step 1: Run with mechanistic tracing to capture internal states
             with self.model.trace(test_scenario.user_prompt) as tracer:
-                # Capture key internal states using architecture-specific accessors
-                try:
+                # Capture key internal states based on architecture
+                if use_fallback:
+                    # Direct access for GPT-2 style models
+                    # Save hidden states from the last transformer layer
+                    hidden_states = self.model.transformer.h[-1].output[0].save()
+                    # For GPT-2, attention patterns are more complex to extract
+                    # Skip for now to avoid OutOfOrderError
+                    attention_patterns = None
+                else:
+                    # Use architecture-specific accessors for other models
                     layer, attention = ModelArchitectureDetector.get_layer_outputs(
                         self.model,
                         self.model_arch_info,
                         layer_idx=-1  # Last layer
                     )
-
-                    # Save outputs from architecture-specific layer
                     hidden_states = layer.output.save()
                     attention_patterns = attention.output.save()
 
-                except AttributeError as e:
-                    # Fallback: Try direct access for GPT-2 style models
-                    self.logger.warning(f"Architecture-specific access failed, trying fallback: {e}")
-                    hidden_states = self.model.transformer.h[-1].output.save()
-                    attention_patterns = self.model.transformer.h[-1].attn.output.save()
-
-                # Generate response
-                response = self.model.generate(
-                    test_scenario.user_prompt,
-                    **gen_kwargs
-                )
+            # Step 2: Generate response separately (outside trace context)
+            # Use nnsight's generate method with tokenization
+            with self.model.generate(test_scenario.user_prompt, **gen_kwargs) as generator:
+                output_tokens = self.model.generator.output.save()
 
             # Extract the actual response text
-            response_text = self._extract_response_text(response)
+            # output_tokens might be a tensor or a proxy object
+            if hasattr(output_tokens, 'value'):
+                tokens = output_tokens.value
+            else:
+                tokens = output_tokens
+            response_text = self._extract_response_text(tokens)
 
             return MechanisticTestResult(
                 response=response_text,

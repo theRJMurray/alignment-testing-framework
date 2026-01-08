@@ -6,6 +6,7 @@ Creates behavioral signatures from model internal states
 import logging
 from typing import Dict, List, Any, Optional
 import numpy as np
+import torch
 from dataclasses import dataclass
 
 @dataclass
@@ -92,11 +93,15 @@ class AlignmentFingerprinter:
         try:
             # Simple heuristic: measure consistency in hidden state patterns
             # This is a placeholder - real implementation would use more sophisticated analysis
-            hidden_mean = np.mean(hidden_states, axis=(0, 1))
-            hidden_std = np.std(hidden_states, axis=(0, 1))
+            import torch
+            hidden_mean = torch.mean(hidden_states, dim=(0, 1))
+            hidden_std = torch.std(hidden_states, dim=(0, 1))
+
+            # Convert to scalar values
+            std_mean = torch.mean(hidden_std).item()
 
             # Lower variance suggests more consistent internal processing
-            consistency_score = 1.0 / (1.0 + np.mean(hidden_std))
+            consistency_score = 1.0 / (1.0 + std_mean)
 
             # Normalize to 0-1 range
             return min(max(consistency_score, 0.0), 1.0)
@@ -137,8 +142,8 @@ class AlignmentFingerprinter:
         try:
             # Simple conflict detection: look for high variance in representations
             # This is a placeholder for more sophisticated conflict detection
-            layer_variance = np.var(hidden_states, axis=(0, 1))
-            avg_variance = np.mean(layer_variance)
+            layer_variance = torch.var(hidden_states, dim=(0, 1))
+            avg_variance = torch.mean(layer_variance).item()
 
             # Normalize variance to conflict score
             conflict_score = min(avg_variance / 10.0, 1.0)  # Arbitrary scaling
@@ -173,12 +178,12 @@ class AlignmentFingerprinter:
         try:
             # Create hash from key characteristics
             if hidden_states is not None:
-                hidden_hash = hash(np.mean(hidden_states).tobytes())
+                hidden_hash = hash(torch.mean(hidden_states).item())
             else:
                 hidden_hash = 0
 
             if attention_patterns is not None:
-                attention_hash = hash(np.mean(attention_patterns).tobytes())
+                attention_hash = hash(torch.mean(attention_patterns).item())
             else:
                 attention_hash = 0
 

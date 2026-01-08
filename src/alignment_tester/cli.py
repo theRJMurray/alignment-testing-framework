@@ -137,103 +137,112 @@ def test(
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Auto-detect provider if not specified
-    if not provider:
-        if "claude" in model.lower():
-            provider = "anthropic"
-        elif "gpt" in model.lower():
-            provider = "openai"
-        else:
+    # CRITICAL FIX: Check mechanistic mode BEFORE provider detection
+    # For mechanistic mode, we use local models and skip API validation
+    model_adapter = None
+    skip_api_validation = mechanistic or fingerprint_only
+
+    if not skip_api_validation:
+        # Auto-detect provider if not specified
+        if not provider:
+            if "claude" in model.lower():
+                provider = "anthropic"
+            elif "gpt" in model.lower():
+                provider = "openai"
+            else:
+                click.echo(
+                    "Error: Could not auto-detect provider. "
+                    "Please specify --provider (anthropic or openai)",
+                    err=True,
+                )
+                sys.exit(1)
+
+        # Get API key
+        if not api_key:
+            if provider == "anthropic":
+                api_key = os.getenv("ANTHROPIC_API_KEY")
+            elif provider == "openai":
+                api_key = os.getenv("OPENAI_API_KEY")
+
+        if not api_key:
             click.echo(
-                "Error: Could not auto-detect provider. "
-                "Please specify --provider (anthropic or openai)",
+                f"Error: API key not found. Set {provider.upper()}_API_KEY "
+                "environment variable or use --api-key flag",
                 err=True,
             )
             sys.exit(1)
 
-    # Get API key
-    if not api_key:
-        if provider == "anthropic":
-            api_key = os.getenv("ANTHROPIC_API_KEY")
-        elif provider == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        click.echo(
-            f"Error: API key not found. Set {provider.upper()}_API_KEY "
-            "environment variable or use --api-key flag",
-            err=True,
-        )
-        sys.exit(1)
-
-    # Create model adapter
-    try:
-        if provider == "anthropic":
-            model_adapter = AnthropicAdapter(api_key=api_key, model_name=model)
-        elif provider == "openai":
-            model_adapter = OpenAIAdapter(api_key=api_key, model_name=model)
-        else:
-            click.echo(f"Error: Unsupported provider: {provider}", err=True)
+        # Create model adapter
+        try:
+            if provider == "anthropic":
+                model_adapter = AnthropicAdapter(api_key=api_key, model_name=model)
+            elif provider == "openai":
+                model_adapter = OpenAIAdapter(api_key=api_key, model_name=model)
+            else:
+                click.echo(f"Error: Unsupported provider: {provider}", err=True)
+                sys.exit(1)
+        except Exception as e:
+            click.echo(f"Error initializing model: {e}", err=True)
             sys.exit(1)
-    except Exception as e:
-        click.echo(f"Error initializing model: {e}", err=True)
-        sys.exit(1)
 
-    # Show cost estimate
-    try:
-        if category == "all":
-            num_tests = 20  # 5 per category × 4 categories
-        else:
-            num_tests = 5
+    # Show cost estimate (skip for mechanistic-only mode)
+    if not skip_api_validation:
+        try:
+            if category == "all":
+                num_tests = 20  # 5 per category × 4 categories
+            else:
+                num_tests = 5
 
-        cost_estimate = model_adapter.estimate_cost(num_tests)
-        click.echo(
-            f"\nEstimated cost: ${cost_estimate.total_cost_usd:.4f} "
-            f"(~${cost_estimate.cost_per_test_usd:.4f} per test)"
+            cost_estimate = model_adapter.estimate_cost(num_tests)
+            click.echo(
+                f"\nEstimated cost: ${cost_estimate.total_cost_usd:.4f} "
+                f"(~${cost_estimate.cost_per_test_usd:.4f} per test)"
+            )
+
+            if not click.confirm("Continue with tests?", default=True):
+                click.echo("Aborted.")
+                sys.exit(0)
+        except Exception as e:
+            logger.warning(f"Could not estimate cost: {e}")
+
+    # Create tester (skip for mechanistic-only mode)
+    overall_score = None
+    if not fingerprint_only and model_adapter is not None:
+        tester = AlignmentTester(
+            model_adapter=model_adapter, output_dir=Path(output)
         )
 
-        if not click.confirm("Continue with tests?", default=True):
-            click.echo("Aborted.")
-            sys.exit(0)
-    except Exception as e:
-        logger.warning(f"Could not estimate cost: {e}")
+        # Run tests
+        try:
+            click.echo(f"\nTesting model: {model}")
+            click.echo(f"Provider: {provider}")
+            click.echo(f"Category: {category}")
+            click.echo()
 
-    # Create tester
-    tester = AlignmentTester(
-        model_adapter=model_adapter, output_dir=Path(output)
-    )
+            if category == "all":
+                overall_score = tester.run_all_tests(
+                    temperature=temperature, max_tokens=max_tokens
+                )
+            else:
+                category_score = tester.run_category(
+                    category, temperature=temperature, max_tokens=max_tokens
+                )
+                # Calculate overall score from single category
+                overall_score = tester.scorer.calculate_overall_score(
+                    {category: category_score}
+                )
 
-    # Run tests
-    try:
-        click.echo(f"\nTesting model: {model}")
-        click.echo(f"Provider: {provider}")
-        click.echo(f"Category: {category}")
-        click.echo()
-
-        if category == "all":
-            overall_score = tester.run_all_tests(
-                temperature=temperature, max_tokens=max_tokens
-            )
-        else:
-            category_score = tester.run_category(
-                category, temperature=temperature, max_tokens=max_tokens
-            )
-            # Calculate overall score from single category
-            overall_score = tester.scorer.calculate_overall_score(
-                {category: category_score}
-            )
-
-    except KeyboardInterrupt:
-        click.echo("\n\nTests interrupted by user.", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"\nError running tests: {e}", err=True)
-        logger.exception("Test execution failed")
-        sys.exit(1)
+        except KeyboardInterrupt:
+            click.echo("\n\nTests interrupted by user.", err=True)
+            sys.exit(1)
+        except Exception as e:
+            click.echo(f"\nError running tests: {e}", err=True)
+            logger.exception("Test execution failed")
+            sys.exit(1)
 
     # Mechanistic Analysis Extension (optional enhancement)
     if mechanistic:
-        click.echo("\n[bold blue]🔬 Running Mechanistic Analysis...[/bold blue]")
+        click.echo("\nRunning Mechanistic Analysis...")
 
         try:
             # Initialize mechanistic components
@@ -243,6 +252,7 @@ def test(
             # Load test scenarios using TestLoader
             # CRITICAL FIX: Properly initialize TestLoader
             from pathlib import Path
+            from types import SimpleNamespace
             test_scenarios_dir = Path("src/alignment_tester/data/test_scenarios")
 
             if not test_scenarios_dir.exists():
@@ -254,14 +264,17 @@ def test(
                 all_scenarios = loader.load_all()
 
                 # Get first available test scenario from any category
-                test_scenario = None
+                test_scenario_dict = None
                 for category_scenarios in all_scenarios.values():
                     if category_scenarios:
-                        test_scenario = category_scenarios[0]
+                        test_scenario_dict = category_scenarios[0]
                         break
 
-                if not test_scenario:
+                if not test_scenario_dict:
                     raise ValueError("No test scenarios found")
+
+                # Convert dict to object for attribute access
+                test_scenario = SimpleNamespace(**test_scenario_dict)
             else:
                 raise FileNotFoundError(f"Test scenarios directory not found: {test_scenarios_dir}")
 
@@ -273,10 +286,10 @@ def test(
                 fingerprint = fingerprinter.create_fingerprint(mech_result)
 
                 # Display results
-                click.echo("\n[bold]Mechanistic Analysis Results:[/bold]")
+                click.echo("\nMechanistic Analysis Results:")
                 click.echo(f"Response: {mech_result.response[:100]}...")
 
-                click.echo(f"\n[bold]Alignment Fingerprint:[/bold]")
+                click.echo(f"\nAlignment Fingerprint:")
                 click.echo(f"  Integrity Score: {fingerprint.alignment_integrity_score:.3f}")
                 click.echo(f"  Attention Consistency: {fingerprint.attention_consistency:.3f}")
                 click.echo(f"  Internal Conflicts: {fingerprint.internal_conflict_level:.3f}")
@@ -303,48 +316,53 @@ def test(
                     with open(output_fingerprint, 'w') as f:
                         json.dump(fingerprint_data, f, indent=2)
 
-                    click.echo(f"\n[green]✓ Fingerprint saved to: {output_fingerprint}[/green]")
+                    click.echo(f"\nFingerprint saved to: {output_fingerprint}")
 
             else:
-                click.echo(f"[red]❌ Mechanistic analysis failed: {mech_result.error_message}[/red]")
+                click.echo(f"ERROR: Mechanistic analysis failed: {mech_result.error_message}")
 
         except Exception as e:
-            click.echo(f"[red]❌ Mechanistic analysis error: {e}[/red]")
+            import traceback
+            click.echo(f"ERROR: Mechanistic analysis error: {e}")
+            click.echo(f"Exception type: {type(e).__name__}")
+            if verbose:
+                click.echo(f"Traceback:\n{traceback.format_exc()}")
             if not fingerprint_only:
-                click.echo("[yellow]Continuing with traditional analysis...[/yellow]")
+                click.echo("Continuing with traditional analysis...")
 
-    # Generate reports
-    report_gen = ReportGenerator()
-    model_info = model_adapter.get_model_info()
+    # Generate reports (skip for mechanistic-only mode)
+    if model_adapter is not None and overall_score is not None:
+        report_gen = ReportGenerator()
+        model_info = model_adapter.get_model_info()
 
-    if output_format in ["console", "all"]:
-        click.echo("\n")
-        report_gen.generate_console_report(
-            overall_score, model_info.model_name, show_details=verbose
-        )
+        if output_format in ["console", "all"]:
+            click.echo("\n")
+            report_gen.generate_console_report(
+                overall_score, model_info.model_name, show_details=verbose
+            )
 
-    output_dir = Path(output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = Path(output)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-    if output_format in ["markdown", "all"]:
-        md_file = output_dir / f"report_{model.replace('/', '_')}.md"
-        report_gen.generate_markdown_report(
-            overall_score,
-            model_info.model_name,
-            model_info.provider,
-            md_file,
-        )
-        click.echo(f"Markdown report saved to: {md_file}")
+        if output_format in ["markdown", "all"]:
+            md_file = output_dir / f"report_{model.replace('/', '_')}.md"
+            report_gen.generate_markdown_report(
+                overall_score,
+                model_info.model_name,
+                model_info.provider,
+                md_file,
+            )
+            click.echo(f"Markdown report saved to: {md_file}")
 
-    if output_format in ["json", "all"]:
-        json_file = output_dir / f"results_{model.replace('/', '_')}.json"
-        report_gen.generate_json_report(
-            overall_score,
-            model_info.model_name,
-            model_info.provider,
-            json_file,
-        )
-        click.echo(f"JSON results saved to: {json_file}")
+        if output_format in ["json", "all"]:
+            json_file = output_dir / f"results_{model.replace('/', '_')}.json"
+            report_gen.generate_json_report(
+                overall_score,
+                model_info.model_name,
+                model_info.provider,
+                json_file,
+            )
+            click.echo(f"JSON results saved to: {json_file}")
 
 
 @cli.command()
