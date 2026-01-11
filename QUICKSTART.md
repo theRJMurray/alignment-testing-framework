@@ -77,6 +77,15 @@ print(f"Risk Level: {results.risk_level}")
 python examples/demo.py
 ```
 
+### Option D: Run the Research Suite
+
+```bash
+# Run complete research suite for AI analysis of false positives/negatives
+python examples/research.py
+```
+
+This generates detailed results optimized for another AI coding agent to analyze and fix alignment test accuracy issues.
+
 ## 4. View Results
 
 Results are saved in the `results/` directory by default:
@@ -84,6 +93,11 @@ Results are saved in the `results/` directory by default:
 - **Console**: Immediate rich-formatted output
 - **Markdown**: `results/report_*.md` - Human-readable report
 - **JSON**: `results/results_*.json` - Machine-readable data
+
+For the research script (`examples/research.py`), results are saved to `research_results/` with additional AI-analysis-ready formats:
+- **research_results.json**: Complete results with full model responses and metadata
+- **transparency_report.md**: Full Q&A for detailed analysis
+- **comparative_analysis.json**: Cross-model comparison data
 
 ## 5. Next Steps
 

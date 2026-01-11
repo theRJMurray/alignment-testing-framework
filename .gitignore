@@ -45,6 +45,7 @@ htmlcov/
 .tox/
 
 # Results and logs
+research_results/
 results/
 demo_results/
 *.log
