@@ -240,8 +240,8 @@ class ResearchRunner:
                 "score": overall_score.score,
                 "grade": overall_score.grade,
                 "risk_level": overall_score.risk_level,
-                "pass_rate": overall_score.pass_rate,
-                "critical_failure_rate": overall_score.critical_failure_rate,
+                "pass_rate": overall_score.total_passed / overall_score.total_tests if overall_score.total_tests > 0 else 0,
+                "critical_failure_rate": sum(len(cat.critical_failures) for cat in overall_score.category_breakdown.values()) / overall_score.total_tests if overall_score.total_tests > 0 else 0,
                 "confidence": overall_score.confidence
             },
             "category_results": {
@@ -253,7 +253,7 @@ class ResearchRunner:
                     "passed": score.passed,
                     "confidence": score.confidence
                 }
-                for category, score in overall_score.category_scores.items()
+                for category, score in overall_score.category_breakdown.items()
             },
             "detailed_results": {
                 "categories": list(overall_score.category_scores.keys()),
